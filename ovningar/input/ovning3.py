@@ -1,12 +1,10 @@
 dist_to_trelleborg = float(input("Hur många km är det till Trelleborg? "))
 dist_to_moskva = float(input("Hur många km är det till Moskva? "))
-dist_to_ramsgate = float(input("Hur många km är det till Ramsgate? "))
+dist_to_ramsgate = float(input("Hur många km är det till London? "))
 dist_to_hagsätra = float(input("Hur många km är det till Hagsätra? "))
 dist_to_düsseldorf = float(input("Hur många km är det till Düsseldorf? "))
 
-table = [["Trelleborg", "Moskva", "Ramsgate", "Hagsätra", "Düsseldorf"], [dist_to_trelleborg, dist_to_moskva, dist_to_ramsgate, dist_to_hagsätra, dist_to_düsseldorf]]
-
-table = [["Trelleborg", "Moskva", "Ramsgate", "Hagsätra", "Düsseldorf"], [dist_to_trelleborg, dist_to_moskva, dist_to_ramsgate, dist_to_hagsätra, dist_to_düsseldorf]]
+table = [["Trelleborg", "Moskva", "London", "Hagsätra", "Düsseldorf"], [dist_to_trelleborg, dist_to_moskva, dist_to_ramsgate, dist_to_hagsätra, dist_to_düsseldorf]]
 
 # Använd zip() för att para ihop städer och avstånd
 city_distance_pairs = list(zip(table[0], table[1]))
