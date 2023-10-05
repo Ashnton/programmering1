@@ -2,7 +2,7 @@
 kvadrattal = []
 bas = 0
 
-while (bas <= 100):
+while (bas < 100):
     kvadrattal.append(bas**2)
     bas+=1
 
@@ -11,7 +11,7 @@ print(kvadrattal)
 # Kubiktal
 kubiktal = []
 bas = 0
-while (bas <= (10000**(1/3))):
+while (bas < (10000**(1/3))):
     kubiktal.append(bas**3)
     bas+=1
 
