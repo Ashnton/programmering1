@@ -10,7 +10,7 @@ def testet():
 antal_lyckade_gånger = 0
 i = 0
 
-while (i < 1_000_000):
+while (i < 1_000_000_00):
     i += 1
     antal_lyckade_gånger += int(testet())
 
