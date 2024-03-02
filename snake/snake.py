@@ -94,6 +94,7 @@ while not game_over:
         foodY = random.randint(0, 29)*20
         
         eaten = False
+        GAMESPEED *=1.1
         
     # Spellogik
     
