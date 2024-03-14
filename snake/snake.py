@@ -13,7 +13,7 @@ clock = pygame.time.Clock()
 
 # Spelinställningar
 GAMESPEED = 5
-LEVEL = 3
+LEVEL = 5
 
 # Egenskaper ormhuvud
 positionX = 40
@@ -33,10 +33,16 @@ foodHeight = 20
 
 # Spelvariabler
 game_over = False
+restart_game = False
 last_pressed = None
 eaten = True
+score = 0
 obstacles_x = []
 obstacles_y = []
+obstacle_amount = 0
+amount_changed = True
+global_counter = 0
+removal_time = 0
 
 # Funktioner för spelet
 def check_collision(x1, y1, width1, height1, x2, y2, width2, height2):
@@ -106,11 +112,41 @@ def rand_obstacles(amount, snake_x, snake_y):
         
     return [obstacles_x, obstacles_y]
     
+def move_towards_snake(snake_x, snake_y, enemy_x, enemy_y, blocksize):
+    targetX = snake_x[0]
+    targetY = snake_y[0]
+    
+    for i in range(len(enemy_x)):        
+        if enemy_x[i] < targetX:
+            newX = enemy_x[i] + blocksize
+        if enemy_y[i] < targetY:
+            newY = enemy_y[i] + blocksize
+        if enemy_x[i] > targetX:
+            newX = enemy_x[i] - blocksize
+        if enemy_y[i] > targetY:
+            newY = enemy_y[i] - blocksize
+        if enemy_x[i] == targetX:
+            newX = enemy_x[i]
+        if enemy_y[i] == targetY:
+            newY = enemy_y[i] 
+        
+        if not check_collision_snake(newX, newY, enemy_x, enemy_y) and not check_collision_snake(newX, newY, snake_x, snake_y):
+            enemy_x[i] = newX
+            enemy_y[i] = newY
+
+def dist_to_snake(x_cord, y_cord, snake_x, snake_y, blocksize):
+    return abs(snake_x[0] - x_cord)/20 + abs(snake_y[0] - y_cord)/blocksize + 5
+
 # Setup inför spelstart
 if LEVEL == 1:
     pass
 elif LEVEL == 2:
-    [obstacles_x, obstacles_y] = rand_obstacles(10, snake_x, snake_y)
+    obstacle_amount = 10
+    [obstacles_x, obstacles_y] = rand_obstacles(obstacle_amount, snake_x, snake_y)
+elif LEVEL == 4:
+    obstacle_amount = 10
+    [obstacles_x, obstacles_y] = rand_obstacles(obstacle_amount, snake_x, snake_y)
+
 
 while not game_over:
     # Tangenthantering
@@ -121,6 +157,7 @@ while not game_over:
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_q:
                 game_over = True
+                
             elif event.key == pygame.K_RIGHT:
                 if last_pressed == "left" and len(snake_x) > 1:
                     game_over = True
@@ -148,14 +185,23 @@ while not game_over:
         foodY = random.randint(0, 29)*20
         if not check_collision_snake(foodX, foodY, snake_x, snake_y):
             eaten = False
-            GAMESPEED *=1.1
+            
+            # Specifikt för nivåer där maten ska försvinna efter en tid
+            if LEVEL == 5:
+                removal_time = dist_to_snake(foodX, foodY, snake_x, snake_y, width) + 2
+        
         
     # Spellogik
+    print(removal_time)
     
     if check_collision(snake_x[-1], snake_y[-1], width, height, foodX, foodY, foodWidth, foodHeight):
         eaten = True
+        score += 1
+        amount_changed = False
         snake_x.append(snake_x[-1])
         snake_y.append(snake_y[-1])
+        
+        GAMESPEED *=1.1
     
     move_snake(snake_x, snake_y, last_pressed)
     
@@ -172,6 +218,15 @@ while not game_over:
         elif snake_y[0] >= 600:
             for i in range(len(snake_y)):
                 snake_y[i] = snake_y[i] - SCREEN_HEIGHT
+    elif LEVEL == 4:
+        if global_counter % 4 == 0:
+            move_towards_snake(snake_x, snake_y, obstacles_x, obstacles_y, width)
+            
+        if score % 5 == 0 and score != 0 and not amount_changed:
+            obstacle_amount += 2
+            [obstacles_x, obstacles_y] = rand_obstacles(obstacle_amount, snake_x, snake_y)
+            
+            amount_changed = True
     else:
         if snake_x[0] < 0 or snake_x[0] >= 600 or snake_y[0] < 0 or snake_y[0] >= 600:
             game_over = True 
@@ -193,9 +248,23 @@ while not game_over:
     for i in range(len(obstacles_x)):
         pygame.draw.rect(screen, (0, 255, 0), (obstacles_x[i], obstacles_y[i], width, height))
     
+    # Skriver ut poängen på skärmen
+    font = pygame.font.Font('freesansbold.ttf', 32)
+    # text = font.render('Din poäng: ' + str(score), True, (0,0,0), (200,200,200))
+    text = font.render('Din poäng: ' + str(score), True, (0,0,0))
+    textRect = text.get_rect()
+    screen.blit(text, textRect)
+    
     pygame.display.update()
 
     clock.tick(GAMESPEED)
+    
+    # Uppdaterar räknare
+    global_counter +=1
+    removal_time -= 1
+    
+    if removal_time == 0:
+        eaten = True
 
 pygame.quit()
 quit()
