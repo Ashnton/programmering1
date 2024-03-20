@@ -135,7 +135,7 @@ def move_towards_snake(snake_x, snake_y, enemy_x, enemy_y, blocksize):
             enemy_y[i] = newY
 
 def dist_to_snake(x_cord, y_cord, snake_x, snake_y, blocksize):
-    return abs(snake_x[0] - x_cord)/20 + abs(snake_y[0] - y_cord)/blocksize + 5
+    return abs(snake_x[0] - x_cord)/blocksize + abs(snake_y[0] - y_cord)/blocksize + 5
 
 # Setup inför spelstart
 if LEVEL == 1:
