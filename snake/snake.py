@@ -1,4 +1,7 @@
 import pygame
+import pygame.camera
+import pygame.image
+import time
 import sys
 import random
 
@@ -10,39 +13,6 @@ SCREEN_HEIGHT = 600
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 clock = pygame.time.Clock()
-
-# Spelinställningar
-GAMESPEED = 5
-LEVEL = 5
-
-# Egenskaper ormhuvud
-positionX = 40
-positionY = 100
-width = 20
-height = 20
-
-# Egenskaper orm
-snake_x = [positionX]
-snake_y = [positionY]
-
-# Egenskaper mat
-foodX = None
-foodY = None
-foodWidth = 20
-foodHeight = 20
-
-# Spelvariabler
-game_over = False
-restart_game = False
-last_pressed = None
-eaten = True
-score = 0
-obstacles_x = []
-obstacles_y = []
-obstacle_amount = 0
-amount_changed = True
-global_counter = 0
-removal_time = 0
 
 # Funktioner för spelet
 def check_collision(x1, y1, width1, height1, x2, y2, width2, height2):
@@ -94,25 +64,7 @@ def move_snake(x_list, y_list, direction):
     
     return x_list, y_list
       
-def rand_obstacles(amount, snake_x, snake_y):
-    obstacles_x = []
-    obstacles_y = []
-    
-    for i in range(amount):
-        invalid_position = True
-        
-        while invalid_position:
-            obstacle_temp_x = random.randint(0, 29)*20
-            obstacle_temp_y = random.randint(0, 29)*20
-            # if not check_collision_snake(obstacle_temp_x, obstacle_temp_y, snake_x, snake_y) and not check_collision(food_x, food_y, height, width, obstacle_temp_x, obstacle_temp_y):
-            if not check_collision_snake(obstacle_temp_x, obstacle_temp_y, snake_x, snake_y):
-                obstacles_x.append(obstacle_temp_x)
-                obstacles_y.append(obstacle_temp_y)
-                invalid_position = False
-        
-    return [obstacles_x, obstacles_y]
-    
-def move_towards_snake(snake_x, snake_y, enemy_x, enemy_y, blocksize):
+def move_towards_snake(snake_x, snake_y, enemy_x, enemy_y, food_x, food_y, blocksize):
     targetX = snake_x[0]
     targetY = snake_y[0]
     
@@ -130,141 +82,290 @@ def move_towards_snake(snake_x, snake_y, enemy_x, enemy_y, blocksize):
         if enemy_y[i] == targetY:
             newY = enemy_y[i] 
         
-        if not check_collision_snake(newX, newY, enemy_x, enemy_y) and not check_collision_snake(newX, newY, snake_x, snake_y):
+        if not check_collision_snake(newX, newY, enemy_x, enemy_y) and not check_collision_snake(newX, newY, snake_x, snake_y) and not check_collision(newX, newY, blocksize, blocksize, food_x, food_y, blocksize, blocksize):
             enemy_x[i] = newX
             enemy_y[i] = newY
 
 def dist_to_snake(x_cord, y_cord, snake_x, snake_y, blocksize):
     return abs(snake_x[0] - x_cord)/blocksize + abs(snake_y[0] - y_cord)/blocksize + 5
 
-# Setup inför spelstart
-if LEVEL == 1:
-    pass
-elif LEVEL == 2:
-    obstacle_amount = 10
-    [obstacles_x, obstacles_y] = rand_obstacles(obstacle_amount, snake_x, snake_y)
-elif LEVEL == 4:
-    obstacle_amount = 10
-    [obstacles_x, obstacles_y] = rand_obstacles(obstacle_amount, snake_x, snake_y)
+def rand_obstacles(amount, snake_x, snake_y, food_x, food_y, blocksize):
+    obstacles_x = []
+    obstacles_y = []
+    
+    for i in range(amount):
+        invalid_position = True
+        
+        while invalid_position:
+            obstacle_temp_x = random.randint(0, 29)*blocksize
+            obstacle_temp_y = random.randint(0, 29)*blocksize
+            # if not check_collision_snake(obstacle_temp_x, obstacle_temp_y, snake_x, snake_y) and not check_collision(food_x, food_y, height, width, obstacle_temp_x, obstacle_temp_y):
+            if not check_collision_snake(obstacle_temp_x, obstacle_temp_y, snake_x, snake_y) and not check_collision(obstacle_temp_x, obstacle_temp_y, blocksize, blocksize, food_x, food_y, blocksize, blocksize) and dist_to_snake(obstacle_temp_x, obstacle_temp_y, snake_x, snake_y, blocksize) > 5:
+            # if not check_collision_snake(obstacle_temp_x, obstacle_temp_y, snake_x, snake_y) and not check_collision(obstacle_temp_x, obstacle_temp_y, blocksize, blocksize, food_x, food_y, blocksize, blocksize):
+                obstacles_x.append(obstacle_temp_x)
+                obstacles_y.append(obstacle_temp_y)
+                invalid_position = False
+        
+    return [obstacles_x, obstacles_y]
+    
+# Funktion för att visa endscreen
+def show_endscreen(score):
+    pygame.camera.init()
 
-
-while not game_over:
-    # Tangenthantering
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
-            sys.exit()
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_q:
-                game_over = True
-                
-            elif event.key == pygame.K_RIGHT:
-                if last_pressed == "left" and len(snake_x) > 1:
-                    game_over = True
-                
-                last_pressed = "right"
-            elif event.key == pygame.K_LEFT:
-                if last_pressed == "right" and len(snake_x) > 1:
-                    game_over = True
-                    
-                last_pressed = "left"
-            elif event.key == pygame.K_UP:
-                if last_pressed == "down" and len(snake_x) > 1:
-                    game_over = True
-                    
-                last_pressed = "up"
-            elif event.key == pygame.K_DOWN:
-                if last_pressed == "up" and len(snake_x) > 1:
-                    game_over = True
-                    
-                last_pressed = "down"
-
-    # Matlogik
-    while eaten:
-        foodX = random.randint(0, 29)*20
-        foodY = random.randint(0, 29)*20
-        if not check_collision_snake(foodX, foodY, snake_x, snake_y):
-            eaten = False
+    cameras = pygame.camera.list_cameras()
             
-            # Specifikt för nivåer där maten ska försvinna efter en tid
-            if LEVEL == 5:
-                removal_time = dist_to_snake(foodX, foodY, snake_x, snake_y, width) + 2
-        
-        
-    # Spellogik
-    print(removal_time)
+    webcam = pygame.camera.Camera(cameras[0])
+
+    webcam.start()
     
-    if check_collision(snake_x[-1], snake_y[-1], width, height, foodX, foodY, foodWidth, foodHeight):
-        eaten = True
-        score += 1
-        amount_changed = False
-        snake_x.append(snake_x[-1])
-        snake_y.append(snake_y[-1])
-        
-        GAMESPEED *=1.1
+    # Väntar med att visa slutskärmen för att fånga användarens reaktion
+    time.sleep(0.25)
     
-    move_snake(snake_x, snake_y, last_pressed)
+    # Webbkameran
     
-    if LEVEL == 3:
-        if snake_x[0] < 0:
-            for i in range(len(snake_x)):
-                snake_x[i] = snake_x[i] + SCREEN_WIDTH
-        elif snake_x[0] >= 600:
-            for i in range(len(snake_x)):
-                snake_x[i] = snake_x[i] - SCREEN_WIDTH
-        elif snake_y[0] < 0:
-            for i in range(len(snake_y)):
-                snake_y[i] = snake_y[i] + SCREEN_HEIGHT
-        elif snake_y[0] >= 600:
-            for i in range(len(snake_y)):
-                snake_y[i] = snake_y[i] - SCREEN_HEIGHT
+    # Hämtar bild på när användaren förlorar
+    img = webcam.get_image()
+    
+    # Loop för endscreen
+    endscreen = True
+    while endscreen:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:  # Tryck mellanslag för att starta om spelet
+                    endscreen = False
+
+        # Rensa skärmen
+        screen.fill((255, 255, 255))
+
+
+        # Rita ut text och bild på endscreen
+        screen.blit(img, (0,0))
+
+        font = pygame.font.Font('freesansbold.ttf', 24)
+        text = font.render('Spelet är över!', True, (0, 0, 0))
+        textRect = text.get_rect()
+        textRect.center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 50)
+        screen.blit(text, textRect)
+
+        score_text = font.render('Din poäng: ' + str(score), True, (0, 0, 0))
+        score_textRect = score_text.get_rect()
+        score_textRect.center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
+        screen.blit(score_text, score_textRect)
+
+        instruction_text = font.render('Tryck mellanslag för att starta om spelet', True, (0, 0, 0))
+        instruction_textRect = instruction_text.get_rect()
+        instruction_textRect.center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 50)
+        screen.blit(instruction_text, instruction_textRect)
+
+        pygame.display.flip()
+
+# Man startar på första leveln som standard
+LEVEL = 1
+
+# Färgtema
+snake_color = 255, 0, 0
+food_color = 0, 255, 0
+obstacle_color = 0, 0, 255
+
+while True:
+    # Setup inför spelstart
+    # Spelinställningar
+    GAMESPEED = 5
+
+    # Egenskaper ormhuvud
+    positionX = 40
+    positionY = 100
+    width = 20
+    height = 20
+
+    # Egenskaper orm
+    snake_x = [positionX]
+    snake_y = [positionY]
+
+    # Egenskaper mat
+    foodX = 0
+    foodY = 0
+    foodWidth = 20
+    foodHeight = 20
+    
+
+    # Spelvariabler
+    game_over = False
+    last_pressed = None
+    eaten = True
+    score = 0
+    obstacles_x = []
+    obstacles_y = []
+    obstacle_amount = 0
+    amount_changed = True
+    global_counter = 0
+    removal_time = 0
+    display_endscreen = False
+
+    if LEVEL == 1:
+        pass
+    elif LEVEL == 2:
+        obstacle_amount = 10
+        [obstacles_x, obstacles_y] = rand_obstacles(obstacle_amount, snake_x, snake_y, foodX, foodY, width)
     elif LEVEL == 4:
-        if global_counter % 4 == 0:
-            move_towards_snake(snake_x, snake_y, obstacles_x, obstacles_y, width)
-            
-        if score % 5 == 0 and score != 0 and not amount_changed:
-            obstacle_amount += 2
-            [obstacles_x, obstacles_y] = rand_obstacles(obstacle_amount, snake_x, snake_y)
-            
-            amount_changed = True
-    else:
-        if snake_x[0] < 0 or snake_x[0] >= 600 or snake_y[0] < 0 or snake_y[0] >= 600:
-            game_over = True 
-    
-    if check_collision_snake(snake_x[0], snake_y[0], snake_x, snake_y):
-        game_over = True
-    if check_obstacle_collision(snake_x, snake_y, obstacles_x, obstacles_y):
-        game_over = True
-    
-    # Utmålningskod
-    screen.fill((255, 255, 255))
-    pygame.draw.rect(screen, (255, 0, 0), (foodX, foodY, foodWidth, foodHeight))
-    
-    # Loop för att rita ut ormen
-    for i in range(len(snake_x)):
-        pygame.draw.rect(screen, (0, 0, 255), (snake_x[i], snake_y[i], width, height))
+        obstacle_amount = 10
+        [obstacles_x, obstacles_y] = rand_obstacles(obstacle_amount, snake_x, snake_y, foodX, foodY, width)
+
+    while not game_over:
+        # Tangenthantering
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_q:
+                    game_over = True
+                    display_endscreen = True
+                    
+                    
+                elif event.key == pygame.K_RIGHT:
+                    if last_pressed == "left" and len(snake_x) > 1:
+                        game_over = True
+                        display_endscreen = True
+
+                    
+                    last_pressed = "right"
+                elif event.key == pygame.K_LEFT:
+                    if last_pressed == "right" and len(snake_x) > 1:
+                        game_over = True
+                        display_endscreen = True
+
+                        
+                    last_pressed = "left"
+                elif event.key == pygame.K_UP:
+                    if last_pressed == "down" and len(snake_x) > 1:
+                        game_over = True
+                        display_endscreen = True
+
+                        
+                    last_pressed = "up"
+                elif event.key == pygame.K_DOWN:
+                    if last_pressed == "up" and len(snake_x) > 1:
+                        game_over = True
+                        display_endscreen = True
+
+                        
+                    last_pressed = "down"
+                elif event.key == pygame.K_1:
+                    LEVEL = 1
+                    game_over = True
+                elif event.key == pygame.K_2:
+                    LEVEL = 2
+                    game_over = True
+                elif event.key == pygame.K_3:
+                    LEVEL = 3
+                    game_over = True
+                elif event.key == pygame.K_4:
+                    LEVEL = 4
+                    game_over = True
+                elif event.key == pygame.K_5:
+                    LEVEL = 5
+                    game_over = True
+                elif event.key == pygame.K_r:
+                    game_over = True
+
+        # Matlogik
+        while eaten:
+            foodX = random.randint(0, 29)*20
+            foodY = random.randint(0, 29)*20
+            if not check_collision_snake(foodX, foodY, snake_x, snake_y):
+                eaten = False
+                
+                # Specifikt för nivåer där maten ska försvinna efter en tid
+                if LEVEL == 5:
+                    removal_time = dist_to_snake(foodX, foodY, snake_x, snake_y, width) + 2
+
+        # Spellogik
         
-    # Loop för att rita ut hinder
-    for i in range(len(obstacles_x)):
-        pygame.draw.rect(screen, (0, 255, 0), (obstacles_x[i], obstacles_y[i], width, height))
-    
-    # Skriver ut poängen på skärmen
-    font = pygame.font.Font('freesansbold.ttf', 32)
-    # text = font.render('Din poäng: ' + str(score), True, (0,0,0), (200,200,200))
-    text = font.render('Din poäng: ' + str(score), True, (0,0,0))
-    textRect = text.get_rect()
-    screen.blit(text, textRect)
-    
-    pygame.display.update()
+        if check_collision(snake_x[-1], snake_y[-1], width, height, foodX, foodY, foodWidth, foodHeight):
+            eaten = True
+            score += 1
+            amount_changed = False
+            snake_x.append(snake_x[-1])
+            snake_y.append(snake_y[-1])
+            
+            GAMESPEED *=1.1
+        
+        move_snake(snake_x, snake_y, last_pressed)
+        
+        if LEVEL == 3:
+            if snake_x[0] < 0:
+                    snake_x[0] = snake_x[0] + SCREEN_WIDTH
+            elif snake_x[0] >= 600:
+                    snake_x[0] = snake_x[0] - SCREEN_WIDTH
+            elif snake_y[0] < 0:
+                    snake_y[0] = snake_y[0] + SCREEN_HEIGHT
+            elif snake_y[0] >= 600:
+                    snake_y[0] = snake_y[0] - SCREEN_HEIGHT
+        else:
+            if snake_x[0] < 0 or snake_x[0] >= 600 or snake_y[0] < 0 or snake_y[0] >= 600:
+                game_over = True
+                display_endscreen = True
+                
+                
+        if LEVEL == 4:
+            if global_counter % 4 == 0:
+                move_towards_snake(snake_x, snake_y, obstacles_x, obstacles_y, foodX, foodY, width)
+                
+            if score % 5 == 0 and score != 0 and not amount_changed:
+                obstacle_amount += 2
+                [obstacles_x, obstacles_y] = rand_obstacles(obstacle_amount, snake_x, snake_y, foodX, foodY, width)
+                
+                amount_changed = True
+        
+        if check_collision_snake(snake_x[0], snake_y[0], snake_x, snake_y):
+            game_over = True
+            display_endscreen = True
 
-    clock.tick(GAMESPEED)
-    
-    # Uppdaterar räknare
-    global_counter +=1
-    removal_time -= 1
-    
-    if removal_time == 0:
-        eaten = True
+        if check_obstacle_collision(snake_x, snake_y, obstacles_x, obstacles_y):
+            game_over = True
+            display_endscreen = True
 
+        
+        # Utmålningskod
+        screen.fill((255, 255, 255))
+        pygame.draw.rect(screen, food_color, (foodX, foodY, foodWidth, foodHeight))
+        
+        # Loop för att rita ut ormen
+        for i in range(len(snake_x)):
+            pygame.draw.rect(screen, snake_color, (snake_x[i], snake_y[i], width, height))
+            
+        # Loop för att rita ut hinder
+        for i in range(len(obstacles_x)):
+            pygame.draw.rect(screen, obstacle_color, (obstacles_x[i], obstacles_y[i], width, height))
+        
+        # Skriver ut poängen på skärmen
+        font = pygame.font.Font('freesansbold.ttf', 32)
+        text = font.render('Din poäng: ' + str(score), True, (0,0,0))
+        textRect = text.get_rect()
+        screen.blit(text, textRect)
+        
+        # Skriver ut leveln på skärmen
+        font = pygame.font.Font('freesansbold.ttf', 32)
+        text = font.render('Level: ' + str(LEVEL), True, (0, 0,0))
+        textRect = (screen.get_width() - text.get_width(), 0)
+        screen.blit(text, textRect)
+        
+        pygame.display.update()
+
+        clock.tick(GAMESPEED)
+        
+        # Uppdaterar räknare
+        global_counter +=1
+        removal_time -= 1
+        
+        if removal_time == 0:
+            eaten = True
+        
+        if game_over and display_endscreen: 
+            show_endscreen(score)
 pygame.quit()
 quit()
