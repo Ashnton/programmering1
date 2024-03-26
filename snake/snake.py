@@ -119,7 +119,7 @@ def show_endscreen(score):
     webcam.start()
     
     # Väntar med att visa slutskärmen för att fånga användarens reaktion
-    time.sleep(0.25)
+    time.sleep(0.5)
     
     # Webbkameran
     
