@@ -8,10 +8,13 @@ import random
 pygame.init()
 
 # Starta Skärm
-SCREEN_WIDTH = 600
-SCREEN_HEIGHT = 600
+PLAYABLE_SCREEN_WIDTH = 600
+PLAYABLE_SCREEN_HEIGHT = 600
 
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+TOTAL_SCREEN_WIDTH = 800
+TOTAL_SCREEN_HEIGHT = 600
+
+screen = pygame.display.set_mode((TOTAL_SCREEN_WIDTH, TOTAL_SCREEN_HEIGHT))
 clock = pygame.time.Clock()
 
 # Funktioner för spelet
@@ -38,6 +41,11 @@ def check_collision(x1, y1, width1, height1, x2, y2, width2, height2):
 def check_collision_snake(head_x, head_y, snake_x, snake_y):
     for i in range(1, len(snake_x)):
         if (head_x == snake_x[i] and head_y == snake_y[i]):
+            return True
+
+def check_collision_against_list(x1, y1, x_list, y_list):
+    for i in range(len(x_list)):
+        if (x1 == x_list[i] and y1 == y_list[i]):
             return True
 
 def check_obstacle_collision(snake_x, snake_y, obstacle_x, obstacle_y):
@@ -82,7 +90,7 @@ def move_towards_snake(snake_x, snake_y, enemy_x, enemy_y, food_x, food_y, block
         if enemy_y[i] == targetY:
             newY = enemy_y[i] 
         
-        if not check_collision_snake(newX, newY, enemy_x, enemy_y) and not check_collision_snake(newX, newY, snake_x, snake_y) and not check_collision(newX, newY, blocksize, blocksize, food_x, food_y, blocksize, blocksize):
+        if not check_collision_against_list(newX, newY, enemy_x, enemy_y) and not check_collision_against_list(newX, newY, snake_x, snake_y) and not check_collision(newX, newY, blocksize, blocksize, food_x, food_y, blocksize, blocksize):
             enemy_x[i] = newX
             enemy_y[i] = newY
 
@@ -99,15 +107,38 @@ def rand_obstacles(amount, snake_x, snake_y, food_x, food_y, blocksize):
         while invalid_position:
             obstacle_temp_x = random.randint(0, 29)*blocksize
             obstacle_temp_y = random.randint(0, 29)*blocksize
-            # if not check_collision_snake(obstacle_temp_x, obstacle_temp_y, snake_x, snake_y) and not check_collision(food_x, food_y, height, width, obstacle_temp_x, obstacle_temp_y):
-            if not check_collision_snake(obstacle_temp_x, obstacle_temp_y, snake_x, snake_y) and not check_collision(obstacle_temp_x, obstacle_temp_y, blocksize, blocksize, food_x, food_y, blocksize, blocksize) and dist_to_snake(obstacle_temp_x, obstacle_temp_y, snake_x, snake_y, blocksize) > 5:
-            # if not check_collision_snake(obstacle_temp_x, obstacle_temp_y, snake_x, snake_y) and not check_collision(obstacle_temp_x, obstacle_temp_y, blocksize, blocksize, food_x, food_y, blocksize, blocksize):
+            
+            if not check_collision_against_list(obstacle_temp_x, obstacle_temp_y, snake_x, snake_y) and not check_collision(obstacle_temp_x, obstacle_temp_y, blocksize, blocksize, food_x, food_y, blocksize, blocksize) and dist_to_snake(obstacle_temp_x, obstacle_temp_y, snake_x, snake_y, blocksize) > 10:
                 obstacles_x.append(obstacle_temp_x)
                 obstacles_y.append(obstacle_temp_y)
                 invalid_position = False
         
     return [obstacles_x, obstacles_y]
+
+def spawn_walls(amount, wall_width, snake_x, snake_y, food_x, food_y, x_limit, y_limit, blocksize):
+    wall_x = []
+    wall_y = []
     
+    for i in range(amount):
+        invalid_position = True
+        
+        while invalid_position:
+            [wall_temp_x, wall_temp_y] = rand_obstacles(1, snake_x, snake_y, food_x, food_y, blocksize)
+            
+            wall_temp_x = int(wall_temp_x[0])
+            wall_temp_y = int(wall_temp_y[0])
+            
+            if not check_collision_against_list(wall_temp_x, wall_temp_y, snake_x, snake_y) and not check_collision(wall_temp_x, wall_temp_y, blocksize, blocksize, food_x, food_y, blocksize, blocksize) and dist_to_snake(wall_temp_x, wall_temp_y, snake_x, snake_y, blocksize) > 5 and wall_temp_x < x_limit - 5*blocksize and wall_temp_y < y_limit - 5*blocksize:
+                wall_x.append(wall_temp_x)
+                wall_y.append(wall_temp_y)
+                
+                for i in range(wall_width):
+                    wall_x.append(wall_temp_x+blocksize*i)
+                    wall_y.append(wall_temp_y)
+                    invalid_position = False
+                    
+    return [wall_x, wall_y]
+      
 # Funktion för att visa endscreen
 def show_endscreen(score):
     pygame.camera.init()
@@ -145,19 +176,19 @@ def show_endscreen(score):
         screen.blit(img, (0,0))
 
         font = pygame.font.Font('freesansbold.ttf', 24)
-        text = font.render('Spelet är över!', True, (0, 0, 0))
+        text = font.render('Spelet är över!', True, (255, 0, 0))
         textRect = text.get_rect()
-        textRect.center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 50)
+        textRect.center = (PLAYABLE_SCREEN_WIDTH // 2, PLAYABLE_SCREEN_HEIGHT // 2 - 50)
         screen.blit(text, textRect)
 
-        score_text = font.render('Din poäng: ' + str(score), True, (0, 0, 0))
+        score_text = font.render('Din poäng: ' + str(score), True, (0, 255, 0))
         score_textRect = score_text.get_rect()
-        score_textRect.center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
+        score_textRect.center = (PLAYABLE_SCREEN_WIDTH // 2, PLAYABLE_SCREEN_HEIGHT // 2)
         screen.blit(score_text, score_textRect)
 
-        instruction_text = font.render('Tryck mellanslag för att starta om spelet', True, (0, 0, 0))
+        instruction_text = font.render('Tryck mellanslag för att starta om spelet', True, (0, 0, 255))
         instruction_textRect = instruction_text.get_rect()
-        instruction_textRect.center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 50)
+        instruction_textRect.center = (PLAYABLE_SCREEN_WIDTH // 2, PLAYABLE_SCREEN_HEIGHT // 2 + 50)
         screen.blit(instruction_text, instruction_textRect)
 
         pygame.display.flip()
@@ -176,20 +207,20 @@ while True:
     GAMESPEED = 5
 
     # Egenskaper ormhuvud
-    positionX = 40
-    positionY = 100
+    position_x = 40
+    position_x = 100
     width = 20
     height = 20
 
     # Egenskaper orm
-    snake_x = [positionX]
-    snake_y = [positionY]
+    snake_x = [position_x]
+    snake_y = [position_x]
 
     # Egenskaper mat
-    foodX = 0
-    foodY = 0
-    foodWidth = 20
-    foodHeight = 20
+    food_x = 0
+    food_y = 0
+    food_width = 20
+    food_height = 20
     
 
     # Spelvariabler
@@ -209,10 +240,13 @@ while True:
         pass
     elif LEVEL == 2:
         obstacle_amount = 10
-        [obstacles_x, obstacles_y] = rand_obstacles(obstacle_amount, snake_x, snake_y, foodX, foodY, width)
+        [obstacles_x, obstacles_y] = rand_obstacles(obstacle_amount, snake_x, snake_y, food_x, food_y, width)
     elif LEVEL == 4:
         obstacle_amount = 10
-        [obstacles_x, obstacles_y] = rand_obstacles(obstacle_amount, snake_x, snake_y, foodX, foodY, width)
+        [obstacles_x, obstacles_y] = rand_obstacles(obstacle_amount, snake_x, snake_y, food_x, food_y, width)
+    elif LEVEL == 6:
+        obstacle_amount = 10
+        [obstacles_x, obstacles_y] = spawn_walls(obstacle_amount, 5, snake_x, snake_y, food_x, food_y, PLAYABLE_SCREEN_WIDTH, PLAYABLE_SCREEN_HEIGHT, width)
 
     while not game_over:
         # Tangenthantering
@@ -230,14 +264,12 @@ while True:
                     if last_pressed == "left" and len(snake_x) > 1:
                         game_over = True
                         display_endscreen = True
-
                     
                     last_pressed = "right"
                 elif event.key == pygame.K_LEFT:
                     if last_pressed == "right" and len(snake_x) > 1:
                         game_over = True
                         display_endscreen = True
-
                         
                     last_pressed = "left"
                 elif event.key == pygame.K_UP:
@@ -245,14 +277,12 @@ while True:
                         game_over = True
                         display_endscreen = True
 
-                        
                     last_pressed = "up"
                 elif event.key == pygame.K_DOWN:
                     if last_pressed == "up" and len(snake_x) > 1:
                         game_over = True
                         display_endscreen = True
 
-                        
                     last_pressed = "down"
                 elif event.key == pygame.K_1:
                     LEVEL = 1
@@ -269,23 +299,27 @@ while True:
                 elif event.key == pygame.K_5:
                     LEVEL = 5
                     game_over = True
+                elif event.key == pygame.K_6:
+                    LEVEL = 6
+                    game_over = True
                 elif event.key == pygame.K_r:
                     game_over = True
 
         # Matlogik
         while eaten:
-            foodX = random.randint(0, 29)*20
-            foodY = random.randint(0, 29)*20
-            if not check_collision_snake(foodX, foodY, snake_x, snake_y):
+            food_x = random.randint(0, 29)*20
+            food_y = random.randint(0, 29)*20
+            if not check_collision_against_list(food_x, food_y, snake_x, snake_y) and not check_collision_against_list(food_x, food_y, obstacles_x, obstacles_y):
                 eaten = False
                 
                 # Specifikt för nivåer där maten ska försvinna efter en tid
                 if LEVEL == 5:
-                    removal_time = dist_to_snake(foodX, foodY, snake_x, snake_y, width) + 2
+                    removal_time = dist_to_snake(food_x, food_y, snake_x, snake_y, width) + 2 + removal_time
+
 
         # Spellogik
         
-        if check_collision(snake_x[-1], snake_y[-1], width, height, foodX, foodY, foodWidth, foodHeight):
+        if check_collision(snake_x[-1], snake_y[-1], width, height, food_x, food_y, food_width, food_height):
             eaten = True
             score += 1
             amount_changed = False
@@ -297,14 +331,15 @@ while True:
         move_snake(snake_x, snake_y, last_pressed)
         
         if LEVEL == 3:
+            # Hanterar specialfallet på level 3 där man kan åka genom kanterna
             if snake_x[0] < 0:
-                    snake_x[0] = snake_x[0] + SCREEN_WIDTH
+                    snake_x[0] = snake_x[0] + PLAYABLE_SCREEN_WIDTH
             elif snake_x[0] >= 600:
-                    snake_x[0] = snake_x[0] - SCREEN_WIDTH
+                    snake_x[0] = snake_x[0] - PLAYABLE_SCREEN_WIDTH
             elif snake_y[0] < 0:
-                    snake_y[0] = snake_y[0] + SCREEN_HEIGHT
+                    snake_y[0] = snake_y[0] + PLAYABLE_SCREEN_HEIGHT
             elif snake_y[0] >= 600:
-                    snake_y[0] = snake_y[0] - SCREEN_HEIGHT
+                    snake_y[0] = snake_y[0] - PLAYABLE_SCREEN_HEIGHT
         else:
             if snake_x[0] < 0 or snake_x[0] >= 600 or snake_y[0] < 0 or snake_y[0] >= 600:
                 game_over = True
@@ -313,11 +348,11 @@ while True:
                 
         if LEVEL == 4:
             if global_counter % 4 == 0:
-                move_towards_snake(snake_x, snake_y, obstacles_x, obstacles_y, foodX, foodY, width)
+                move_towards_snake(snake_x, snake_y, obstacles_x, obstacles_y, food_x, food_y, width)
                 
             if score % 5 == 0 and score != 0 and not amount_changed:
                 obstacle_amount += 2
-                [obstacles_x, obstacles_y] = rand_obstacles(obstacle_amount, snake_x, snake_y, foodX, foodY, width)
+                [obstacles_x, obstacles_y] = rand_obstacles(obstacle_amount, snake_x, snake_y, food_x, food_y, width)
                 
                 amount_changed = True
         
@@ -328,11 +363,10 @@ while True:
         if check_obstacle_collision(snake_x, snake_y, obstacles_x, obstacles_y):
             game_over = True
             display_endscreen = True
-
         
         # Utmålningskod
         screen.fill((255, 255, 255))
-        pygame.draw.rect(screen, food_color, (foodX, foodY, foodWidth, foodHeight))
+        pygame.draw.rect(screen, food_color, (food_x, food_y, food_width, food_height))
         
         # Loop för att rita ut ormen
         for i in range(len(snake_x)):
@@ -364,6 +398,10 @@ while True:
         
         if removal_time == 0:
             eaten = True
+            if len(snake_x) > 0:
+                snake_x.pop()
+                snake_y.pop()
+                score -= 1
         
         if game_over and display_endscreen: 
             show_endscreen(score)
