@@ -366,6 +366,10 @@ while True:
         
         # Utmålningskod
         screen.fill((255, 255, 255))
+        
+        # Ritar ut spelplanen
+        pygame.draw.rect(screen, (155, 155, 155), (0, 0, PLAYABLE_SCREEN_WIDTH, PLAYABLE_SCREEN_HEIGHT))
+        
         pygame.draw.rect(screen, food_color, (food_x, food_y, food_width, food_height))
         
         # Loop för att rita ut ormen
@@ -383,9 +387,35 @@ while True:
         screen.blit(text, textRect)
         
         # Skriver ut leveln på skärmen
-        font = pygame.font.Font('freesansbold.ttf', 32)
-        text = font.render('Level: ' + str(LEVEL), True, (0, 0,0))
+        text = font.render('Level: ' + str(LEVEL), True, (0,0,0))
         textRect = (screen.get_width() - text.get_width(), 0)
+        screen.blit(text, textRect)
+        
+        # Skriver ut information om levlar
+        font = pygame.font.Font('freesansbold.ttf', 16)
+        
+        text = font.render('Level 1: Vanlig snake', True, (0,0,0))
+        textRect = (screen.get_width() - text.get_width(), 40)
+        screen.blit(text, textRect)
+        
+        text = font.render('Level 2: Tio hinder', True, (0,0,0))
+        textRect = (screen.get_width() - text.get_width(), 60)
+        screen.blit(text, textRect)
+        
+        text = font.render('Level 3: Åka genom kanterna', True, (0,0,0))
+        textRect = (screen.get_width() - text.get_width(), 80)
+        screen.blit(text, textRect)
+        
+        text = font.render('Level 4: Målsökande hinder', True, (0,0,0))
+        textRect = (screen.get_width() - text.get_width(), 100)
+        screen.blit(text, textRect)
+        
+        text = font.render('Level 5: Mat försvinner', True, (0,0,0))
+        textRect = (screen.get_width() - text.get_width(), 120)
+        screen.blit(text, textRect)
+        
+        text = font.render('Level 6: Väggar', True, (0,0,0))
+        textRect = (screen.get_width() - text.get_width(), 140)
         screen.blit(text, textRect)
         
         pygame.display.update()
