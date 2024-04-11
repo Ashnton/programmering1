@@ -319,7 +319,7 @@ while True:
 
         # Spellogik
         
-        if check_collision(snake_x[-1], snake_y[-1], width, height, food_x, food_y, food_width, food_height):
+        if check_collision(snake_x[0], snake_y[0], width, height, food_x, food_y, food_width, food_height):
             eaten = True
             score += 1
             amount_changed = False
