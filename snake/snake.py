@@ -426,9 +426,9 @@ while True:
         global_counter +=1
         removal_time -= 1
         
-        if removal_time == 0:
+        if removal_time <= 0:
             eaten = True
-            if len(snake_x) > 0:
+            if len(snake_x) > 1:
                 snake_x.pop()
                 snake_y.pop()
                 score -= 1
