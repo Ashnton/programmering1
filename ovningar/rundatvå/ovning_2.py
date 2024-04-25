@@ -1,1 +1,1 @@
-print("Hej" * 8)
+print(8 * "\tHej")

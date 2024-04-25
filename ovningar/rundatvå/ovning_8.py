@@ -4,10 +4,10 @@
 print(len(Ämnen))
 print(Ämnen)
 
-
 Ämnen.append("programmering")
 print(Ämnen)
 
+Ämnen.insert(1, "nätverksteknologier")
 Ämnen[1] = "nätverksteknologier"
 print(Ämnen)
 
